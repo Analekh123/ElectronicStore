@@ -1,10 +1,17 @@
 package com.analekh.electronic.store.ElectronicStroreeeee.controller;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.StreamUtils;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -14,12 +21,16 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.analekh.electronic.store.ElectronicStroreeeee.dto.ApiResponseMessage;
+import com.analekh.electronic.store.ElectronicStroreeeee.dto.ImageResponse;
 import com.analekh.electronic.store.ElectronicStroreeeee.dto.PageableResponse;
 import com.analekh.electronic.store.ElectronicStroreeeee.dto.UserDto;
+import com.analekh.electronic.store.ElectronicStroreeeee.services.FileService;
 import com.analekh.electronic.store.ElectronicStroreeeee.services.UserService;
 
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 
 @RestController
@@ -28,6 +39,15 @@ public class UserController {
 
 	@Autowired
 	private UserService userService;
+	
+	@Autowired
+	private FileService fileService;
+	
+	@Value("${user.profile.image.path}")
+	private String imageUploadPath;
+	
+	
+	private Logger logger = LoggerFactory.getLogger(UserController.class);
 	
 	//create
 	@PostMapping
@@ -92,5 +112,47 @@ public class UserController {
 	public ResponseEntity<List<UserDto>> searchUser(@PathVariable String keywords){
 		return new ResponseEntity<>(userService.searchUser(keywords),HttpStatus.OK);
 	}
+	
+	
+	//upload user image
+	
+	@PostMapping("/image/{userId}")
+	public ResponseEntity<ImageResponse> uploadUserImage(
+			@RequestParam("userImage") MultipartFile image,
+			@PathVariable String userId
+			) throws IOException{
+		
+		String imageName = fileService.uploadFile(image, imageUploadPath);
+		
+		UserDto user = userService.getUser(userId);
+		
+		user.setImageName(imageName);
+		
+		UserDto userDto = userService.updateUser(user, userId);
+		
+		ImageResponse imageResponse = ImageResponse.builder()
+										.imageName(imageName)
+										.success(true)
+										.status(HttpStatus.OK)
+										.build();
+		
+		return new ResponseEntity<ImageResponse>(imageResponse,HttpStatus.CREATED);
+	}
+	
+	
+	//server user image
+	@GetMapping("/image/{userId}")
+	public void serverUserImage(@PathVariable String userId,HttpServletResponse response) throws IOException {
+		//
+		UserDto user = userService.getUser(userId);
+		logger.info("User image name : {}",user.getImageName());
+		InputStream resource = fileService.getResource(imageUploadPath, user.getImageName());
+		
+		response.setContentType(MediaType.IMAGE_JPEG_VALUE);
+		
+		StreamUtils.copy(resource, response.getOutputStream());
+		
+	}
+	
 
 }
