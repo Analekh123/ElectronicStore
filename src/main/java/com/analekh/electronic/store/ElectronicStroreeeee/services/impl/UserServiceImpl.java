@@ -6,10 +6,17 @@ import java.util.stream.Collectors;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
+import com.analekh.electronic.store.ElectronicStroreeeee.dto.PageableResponse;
 import com.analekh.electronic.store.ElectronicStroreeeee.dto.UserDto;
 import com.analekh.electronic.store.ElectronicStroreeeee.entities.User;
+import com.analekh.electronic.store.ElectronicStroreeeee.exceptions.ResourceNotFoundException;
+import com.analekh.electronic.store.ElectronicStroreeeee.helper.Helper;
 import com.analekh.electronic.store.ElectronicStroreeeee.repositories.UserRepository;
 import com.analekh.electronic.store.ElectronicStroreeeee.services.UserService;
 
@@ -44,12 +51,13 @@ public class UserServiceImpl implements UserService{
 	@Override
 	public UserDto updateUser(UserDto userDto, String userId) {
 		
-		User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found with given id"));
+		User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User not found with given id"));
 		user.setName(userDto.getName());
 		//email update
 		user.setAbout(userDto.getAbout());
 		user.setGender(userDto.getGender());
 		user.setPassword(userDto.getPassword());
+		user.setImageName(userDto.getImageName());
 		
 		//save data
 		User updatedUser =  userRepository.save(user);
@@ -68,16 +76,16 @@ public class UserServiceImpl implements UserService{
 		userRepository.delete(user);
 	}
 
-	@Override
-	public List<UserDto> getAllUser() {
-		
-		List<User> users = userRepository.findAll();
-		List<UserDto> dtoList = users.stream()
-			.map(user -> entityToDto(user))
-			.collect(Collectors.toList());
-		
-		return dtoList;
-	}
+//	@Override
+//	public List<UserDto> getAllUser() {
+//		
+//		List<User> users = userRepository.findAll();
+//		List<UserDto> dtoList = users.stream()
+//			.map(user -> entityToDto(user))
+//			.collect(Collectors.toList());
+//		
+//		return dtoList;
+//	}
 
 	@Override
 	public UserDto getUser(String userId) {
@@ -141,6 +149,41 @@ public class UserServiceImpl implements UserService{
 		
 		return mapper.map(userDto, User.class);
 		
+	}
+
+
+
+	@Override
+	public PageableResponse<UserDto> getAllUser(int pageNumber, int pageSize,String sortBy,String sortDir) {
+		
+		//pageNumber default starts from 0
+		
+//		Sort sort = Sort.by(sortBy);
+		
+		
+		Sort sort = (sortDir.equalsIgnoreCase("desc")) ? (Sort.by(sortBy).descending()) : (Sort.by(sortBy).ascending());
+		
+		Pageable pageable = PageRequest.of(pageNumber, pageSize,sort);
+		
+		Page<User> page= userRepository.findAll(pageable);
+		
+//		List<User> users = page.getContent();
+//		
+//		List<UserDto> dtoList = users.stream()
+//			.map(user -> entityToDto(user))
+//			.collect(Collectors.toList());
+//		
+//		PageableResponse<UserDto> response = new PageableResponse<UserDto>();
+//		response.setContent(dtoList);
+//		response.setPageNumber(page.getNumber());
+//		response.setPageSize(page.getSize());
+//		response.setTotalElements(page.getTotalElements());
+//		response.setTotalPages(page.getTotalPages());
+//		response.setLastPage(page.isLast());
+		
+		PageableResponse<UserDto> response = Helper.getPageableResponse(page, UserDto.class);
+		
+		return response;
 	}
 
 }

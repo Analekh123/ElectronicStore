@@ -2,6 +2,7 @@ package com.analekh.electronic.store.ElectronicStroreeeee.services;
 
 import java.util.List;
 
+import com.analekh.electronic.store.ElectronicStroreeeee.dto.PageableResponse;
 import com.analekh.electronic.store.ElectronicStroreeeee.dto.UserDto;
 
 public interface UserService {
@@ -18,7 +19,7 @@ public interface UserService {
 	void deleteUser(String userId);
 	
 	//get all users
-	List<UserDto> getAllUser();
+//	List<UserDto> getAllUser();
 	
 	//get single user by id
 	UserDto getUser(String userId);
@@ -28,6 +29,8 @@ public interface UserService {
 	
 	//search user
 	List<UserDto> searchUser(String keyword);
+
+	PageableResponse<UserDto> getAllUser(int pageNumber, int pageSize,String sortBy,String sortDir);
 	
 	//other user specific service
 }
